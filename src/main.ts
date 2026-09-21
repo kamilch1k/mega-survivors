@@ -12,7 +12,15 @@ import { buildTerrain, terrainHeight } from './rendering/terrain';
 import { Vegetation } from './rendering/vegetation';
 import { buildProps } from './rendering/props';
 import { applyFog, buildLighting, buildSky, sunDirection } from './rendering/sky';
-import { loadGLTF, loadModel, meshToInstanced, prepareModel } from './rendering/assets';
+import {
+  filterClipToRig,
+  loadGLTF,
+  loadModel,
+  meshToInstanced,
+  prepareModel,
+  rescaleClipPositions,
+  skeletonUnitScale,
+} from './rendering/assets';
 import { Particles } from './effects/particles';
 import { SlashArcs } from './effects/slash';
 import { ENEMY, PLAYER, RENDER } from './data/config';
@@ -92,10 +100,10 @@ let handBone: THREE.Object3D | null = null;
 let glaiveRef: THREE.Group | null = null;
 let weaponInHand = false;
 let weaponBaseQuat = new THREE.Quaternion();
-let useBaseQuat = true;
+let useBaseQuat = false;
 let handBoneName = '';
 let lockedClip: string | null = null;
-let weaponLocal: [number, number, number, number, number, number, number] = [0, 0, 0, 0, 0, 0, 2];
+let weaponLocal: [number, number, number, number, number, number, number] = [0, 0, 0, 1.5708, 0, 0, 2];
 let glaiveNativeLen = 1;
 const actions: Record<string, THREE.AnimationAction> = {};
 const _ws = new THREE.Vector3();
@@ -119,7 +127,8 @@ function applyWeaponLocal(): void {
   glaiveRef.scale.setScalar(len / glaiveNativeLen / s);
 }
 
-const PLAYER_MODEL_URL = './assets/oss/Soldier.glb';
+const PLAYER_MODEL_URL = './assets/characters/her_rigged.glb';
+const PLAYER_CLIP_URLS = ['./assets/oss/Soldier.glb'];
 
 function pickHandBone(root: THREE.Object3D, groundY: number): THREE.Object3D | null {
   root.updateMatrixWorld(true);
@@ -161,8 +170,7 @@ function clipKey(raw: string): string {
 
 void (async () => {
   const anim = await loadGLTF(PLAYER_MODEL_URL);
-  const fallbackGltf = anim ? null : await loadGLTF('./assets/characters/player.glb');
-  const model = anim?.scene ?? fallbackGltf?.scene ?? null;
+  const model = anim?.scene ?? (await loadGLTF('./assets/characters/player.glb'))?.scene ?? null;
   if (!model) {
     modelStatus = 'procedural-fallback';
     return;
@@ -171,10 +179,21 @@ void (async () => {
   const measured = new THREE.Box3().setFromObject(model);
   modelHeight = Number((measured.max.y - measured.min.y).toFixed(3));
 
-  if (anim && anim.animations.length > 0) {
+  const clips: THREE.AnimationClip[] = [...(anim?.animations ?? [])];
+  const ownUnit = skeletonUnitScale(model);
+  for (const url of PLAYER_CLIP_URLS) {
+    const src = await loadGLTF(url);
+    if (!src) continue;
+    const factor = ownUnit / skeletonUnitScale(src.scene);
+    for (const clip of src.animations) {
+      clips.push(rescaleClipPositions(filterClipToRig(clip, model), factor));
+    }
+  }
+
+  if (clips.length > 0) {
     mixer = new THREE.AnimationMixer(model);
-    playerClips = anim.animations.map((c) => c.name).join(' | ');
-    for (const clip of anim.animations) {
+    playerClips = clips.map((c) => c.name).join(' | ');
+    for (const clip of clips) {
       const key = clipKey(clip.name);
       if (key && !actions[key]) {
         const action = mixer.clipAction(clip);

@@ -100,7 +100,39 @@ export function prepareModel(model: THREE.Object3D, targetHeight: number, envInt
   return scale;
 }
 
-function firstMesh(root: THREE.Object3D): THREE.Mesh | null {
+export function skeletonUnitScale(root: THREE.Object3D): number {
+  let hips: THREE.Object3D | null = null;
+  root.traverse((o) => {
+    if (!hips && /hips/i.test(o.name)) hips = o;
+  });
+  if (!hips) return 1;
+  for (const child of (hips as THREE.Object3D).children) {
+    if (/spine/i.test(child.name)) {
+      const len = child.position.length();
+      if (len > 1e-6) return len;
+    }
+  }
+  return 1;
+}
+
+export function filterClipToRig(clip: THREE.AnimationClip, root: THREE.Object3D): THREE.AnimationClip {
+  const nodes = new Set<string>();
+  root.traverse((o) => nodes.add(o.name));
+  const tracks = clip.tracks.filter((t) => nodes.has(t.name.split('.')[0]));
+  return new THREE.AnimationClip(clip.name, clip.duration, tracks);
+}
+
+export function rescaleClipPositions(clip: THREE.AnimationClip, factor: number): THREE.AnimationClip {
+  if (Math.abs(factor - 1) < 1e-6) return clip;
+  const cloned = clip.clone();
+  for (const track of cloned.tracks) {
+    if (!track.name.endsWith('.position')) continue;
+    for (let i = 0; i < track.values.length; i++) track.values[i] *= factor;
+  }
+  return cloned;
+}
+
+export function firstMesh(root: THREE.Object3D): THREE.Mesh | null {
   let found: THREE.Mesh | null = null;
   root.traverse((o) => {
     const mesh = o as THREE.Mesh;

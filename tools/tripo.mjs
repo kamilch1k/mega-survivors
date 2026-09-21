@@ -221,9 +221,10 @@ async function waitTask(id, timeoutSec = 600) {
 
 async function rigAll(args) {
   const base = args.out ?? 'characters/player';
-  const spec = args.spec ?? 'tripo';
+  const spec = args.spec ?? 'mixamo';
   const animationList = (
-    args.animations ?? 'preset:idle,preset:walk,preset:run,preset:jump,preset:slash,preset:hurt,preset:turn'
+    args.animations ??
+    'preset:biped:idle,preset:biped:walk,preset:biped:run,preset:biped:jump,preset:biped:slash'
   )
     .split(',')
     .map((s) => s.trim())
@@ -243,7 +244,7 @@ async function rigAll(args) {
     console.log(`    rig_type=${rigType}`);
 
     console.log('2/3 auto-rig');
-    const rigModel = args.model ?? 'v2.5-20260210';
+    const rigModel = args.model ?? 'v1.0-20240301';
     const rigData = await req('/animations/rig', {
       method: 'POST',
       json: { input: taskId, rig_type: rigType, spec, out_format: 'glb', model: rigModel },
