@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MEGA-SURVIVORS</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0b0d12;
+      }
+      #view {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+      #hud {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace;
+        color: #cfe3ff;
+        text-shadow: 0 0 6px #000;
+        pointer-events: none;
+        white-space: pre;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        font: 14px ui-monospace, monospace;
+        color: #8fb4ff;
+        background: #0b0d12;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <div id="hud"></div>
+    <div id="boot">loading…</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

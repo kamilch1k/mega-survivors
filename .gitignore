@@ -1,0 +1,10 @@
+node_modules/
+.tripo-tasks.json
+dist/
+shots/
+.env
+.env.*
+*.local
+*.log
+src-tauri/target/
+refs/
