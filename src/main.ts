@@ -122,11 +122,17 @@ function applyWeaponLocal(): void {
 const PLAYER_MODEL_URL = './assets/oss/Soldier.glb';
 
 function pickHandBone(root: THREE.Object3D, groundY: number): THREE.Object3D | null {
-  for (const name of ['mixamorig:RightHand', 'mixamorig:LeftHand']) {
-    const found = root.getObjectByName(name);
-    if (found) return found;
-  }
   root.updateMatrixWorld(true);
+  const bones: { o: THREE.Object3D; n: string }[] = [];
+  root.traverse((o) => {
+    if ((o as THREE.Bone).isBone) {
+      bones.push({ o, n: o.name.toLowerCase().replace(/[^a-z]/g, '') });
+    }
+  });
+  const right = bones.find((b) => b.n.includes('righthand'));
+  if (right) return right.o;
+  const left = bones.find((b) => b.n.includes('lefthand'));
+  if (left) return left.o;
   const v = new THREE.Vector3();
   let best: THREE.Object3D | null = null;
   let bestScore = -Infinity;
