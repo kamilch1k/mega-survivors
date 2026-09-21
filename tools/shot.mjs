@@ -85,16 +85,20 @@ try {
   });
   page.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err.message}`));
 
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
-  await page.waitForFunction(() => window.__ms && window.__ms.ready, null, { timeout: timeoutMs });
-  await page.waitForFunction(
-    () => {
-      const s = window.__ms.snapshot();
-      return s.playerModel !== 'pending' && s.enemyModel !== 'pending';
-    },
-    null,
-    { timeout: timeoutMs },
-  );
+  const pagePath = arg('path', null);
+  const target = pagePath ? url + pagePath.replace(/^\//, '') : url;
+  await page.goto(target, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
+  if (!pagePath) {
+    await page.waitForFunction(() => window.__ms && window.__ms.ready, null, { timeout: timeoutMs });
+    await page.waitForFunction(
+      () => {
+        const s = window.__ms.snapshot();
+        return s.playerModel !== 'pending' && s.enemyModel !== 'pending';
+      },
+      null,
+      { timeout: timeoutMs },
+    );
+  }
 
   if (teleport) {
     const [x, z] = teleport.split(',').map(Number);

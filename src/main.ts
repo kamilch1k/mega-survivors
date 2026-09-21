@@ -54,7 +54,8 @@ scene.add(sky);
 const sun = buildLighting(scene);
 scene.add(buildTerrain());
 const vegetation = new Vegetation();
-scene.add(vegetation.group);
+const SANDBOX = true;
+if (!SANDBOX) scene.add(vegetation.group);
 scene.add(buildProps());
 
 const particles = new Particles(1800);
@@ -242,6 +243,10 @@ void (async () => {
 let enemyStatus = 'pending';
 
 void (async () => {
+  if (SANDBOX) {
+    enemyStatus = 'sandbox';
+    return;
+  }
   const wolf = await loadModel('./assets/enemies/wolf.glb');
   const source = wolf ? meshToInstanced(wolf, ENEMY.wolfHeight) : null;
   if (source) {
@@ -433,6 +438,14 @@ function updateFrost(dt: number): void {
 function simulate(dt: number): void {
   inputSource.sample(input);
   player.update(dt, input, cam.yaw);
+
+  if (SANDBOX) {
+    elapsed += dt;
+    ticks++;
+    player.hp = Math.min(player.maxHp, player.hp + dt * 4);
+    return;
+  }
+
   enemyField.update(dt, player.position.x, player.position.z);
 
   if (enemyField.contactDps > 0 && player.invuln <= 0 && !dead) {
@@ -566,7 +579,7 @@ function syncVisuals(dt: number, immediate: boolean, alpha: number): void {
   sun.target.position.set(renderPos.x, 0, renderPos.z);
   sun.target.updateMatrixWorld();
 
-  vegetation.update(renderPos.x, renderPos.y, renderPos.z, visualTime);
+  if (!SANDBOX) vegetation.update(renderPos.x, renderPos.y, renderPos.z, visualTime);
 
   const abilities: { name: string; cooldown01: number }[] = [];
   if (player.orbCount > 0) abilities.push({ name: 'ORB', cooldown01: 1 });
